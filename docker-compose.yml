@@ -1,0 +1,52 @@
+services:
+  spring-boot-app:
+    build:
+      context: ./FIS_SAMPLE_APP/spring-security-jwt
+      dockerfile: Dockerfile
+    container_name: planonboardingApi-app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/planonboarding
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+    networks:
+      - my-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  angular-app:
+    build:
+      context: ./fis_planOnboarding_ui
+      dockerfile: Dockerfile
+    container_name: planonboardingUi-app
+    ports:
+      - "8087:80"
+    networks:
+      - my-network
+    depends_on:
+      - spring-boot-app
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_DB: planonboarding
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - my-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  my-network:
+    driver: bridge
